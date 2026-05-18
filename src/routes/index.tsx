@@ -95,7 +95,7 @@ function SquadPage() {
 
   return (
     <div className="min-h-screen pb-32">
-      <header className="sticky top-0 z-30 bg-background/80 backdrop-blur border-b border-border">
+      <header className="sticky top-0 z-30 bg-background/80 backdrop-blur border-b border-border safe-top">
         <div className="px-4 py-3 flex items-center justify-between">
           <div>
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Hoş geldin</div>

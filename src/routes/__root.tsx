@@ -7,6 +7,8 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { initNative } from "@/lib/native";
 
 import appCss from "../styles.css?url";
 
@@ -108,6 +110,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+
+  useEffect(() => {
+    initNative(router);
+  }, [router]);
 
   return (
     <QueryClientProvider client={queryClient}>
