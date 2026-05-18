@@ -47,7 +47,7 @@ function LeaderboardPage() {
 
   return (
     <div className="min-h-screen pb-32">
-      <header className="px-4 pt-6 pb-2">
+      <header className="px-4 pt-6 pb-2 safe-top">
         <h1 className="text-3xl font-bold tracking-tight">Sıralamalar</h1>
         <p className="text-sm text-muted-foreground">Zirveye oyna, ödülleri kap.</p>
       </header>

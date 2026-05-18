@@ -95,4 +95,6 @@
       repeating-linear-gradient(0deg, transparent 0 32px, color-mix(in oklab, white 6%, transparent) 32px 64px);
     pointer-events: none;
   }
+  .safe-top { padding-top: env(safe-area-inset-top); }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 }

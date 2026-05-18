@@ -24,7 +24,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col px-6 pt-16 pb-10">
+    <div className="min-h-screen flex flex-col px-6 pt-16 pb-10 safe-top">
       <div className="mx-auto w-full max-w-sm">
         <div className="mb-10 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-neon/40 bg-neon/10 px-3 py-1 text-xs font-medium text-neon">
