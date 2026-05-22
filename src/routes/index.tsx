@@ -39,6 +39,9 @@ function SquadPage() {
 
   const [watching, setWatching] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [formationWarn, setFormationWarn] = useState<string | null>(null);
+
+  const POS_TR: Record<string, string> = { GK: "kaleci", DEF: "defans", MID: "orta saha", FWD: "forvet" };
 
   useEffect(() => {
     if (user === null && typeof window !== "undefined") {
@@ -50,6 +53,9 @@ function SquadPage() {
       return () => clearTimeout(t);
     }
   }, [user, navigate]);
+
+  // Kullanıcı oyuncu ekleyip/çıkarınca diziliş uyarısı eskir → temizle
+  useEffect(() => { setFormationWarn(null); }, [squad]);
 
   const budget = BASE_BUDGET + bonus;
   const picked = useMemo(() => PLAYERS.filter((p) => squad.includes(p.id)), [squad]);
@@ -124,7 +130,18 @@ function SquadPage() {
       <div className="px-4 pt-4 space-y-4">
         {/* Formation + Status */}
         <div className="flex items-center gap-3">
-          <Select value={formation} onValueChange={(v) => actions.setFormation(v as FormationKey)}>
+          <Select
+            value={formation}
+            onValueChange={(v) => {
+              const res = actions.setFormation(v as FormationKey);
+              if (res.error) {
+                const posName = POS_TR[res.pos] ?? res.pos;
+                setFormationWarn(`${v} dizilişi için önce 1 ${posName} çıkar (şu an ${res.have}, en fazla ${res.need} olmalı).`);
+              } else {
+                setFormationWarn(null);
+              }
+            }}
+          >
             <SelectTrigger className="flex-1 h-11"><SelectValue /></SelectTrigger>
             <SelectContent>
               {(Object.keys(FORMATIONS) as FormationKey[]).map((f) => (
@@ -137,6 +154,14 @@ function SquadPage() {
             <span className="text-muted-foreground">/{totalNeeded}</span>
           </div>
         </div>
+
+        {/* Diziliş değiştirme uyarısı (fazla oyuncu varsa) */}
+        {formationWarn && (
+          <div className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm -mt-2">
+            <AlertTriangle className="size-4 mt-0.5 text-destructive shrink-0" />
+            <div className="text-xs text-destructive/90 leading-snug">{formationWarn}</div>
+          </div>
+        )}
 
         {/* Pitch */}
         <Pitch formation={config} slots={slots} budget={budget} />

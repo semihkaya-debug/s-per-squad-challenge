@@ -1,6 +1,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import type { FormationKey, JokerId } from "./players";
-import { JOKERS, SEASONAL_USES_PER_HALF, MAX_AD_BUDGET } from "./players";
+import { JOKERS, SEASONAL_USES_PER_HALF, MAX_AD_BUDGET, FORMATIONS, PLAYERS } from "./players";
+import type { Position } from "./players";
 
 type User = { email: string; name: string };
 
@@ -103,8 +104,22 @@ export const actions = {
     if (!state.squad.includes(id)) return;
     setState({ captain: id });
   },
+  // Diziliş değiştir — YENİ dizilişe mevcut oyuncular sığmıyorsa ENGELLE (Yol B-hafif).
+  // Dönüş: true = değişti, { error, pos, have, need } = engellendi (fazla pozisyon bilgisi).
   setFormation(f: FormationKey) {
+    const config = FORMATIONS[f];
+    const picked = PLAYERS.filter((p) => state.squad.includes(p.id));
+    const positions: Position[] = ["GK", "DEF", "MID", "FWD"];
+    for (const pos of positions) {
+      const have = picked.filter((p) => p.position === pos).length;
+      const need = config[pos];
+      if (have > need) {
+        // Bu dizilişe geçince bu pozisyonda fazla oyuncu kalır → engelle
+        return { error: true as const, pos, have, need };
+      }
+    }
     setState({ formation: f, confirmed: false });
+    return { error: false as const };
   },
 
   // Reklam izlenince çağrılır → bu haftaki haftalık joker hakkını açar
