@@ -26,7 +26,7 @@ export function Pitch({
       {rows.map((pos) => (
         <div key={pos} className="relative z-10 flex justify-around items-center">
           {slots[pos].map((p, i) => (
-            <PlayerSlot key={pos + i} position={pos} player={p} index={i} budget={budget} />
+            <PlayerSlot key={pos + i} position={pos} player={p} budget={budget} />
           ))}
         </div>
       ))}
@@ -35,8 +35,8 @@ export function Pitch({
 }
 
 function PlayerSlot({
-  position, player, index, budget,
-}: { position: Position; player: Player | null; index: number; budget: number }) {
+  position, player, budget,
+}: { position: Position; player: Player | null; budget: number }) {
   const captain = useStore((s) => s.captain);
   const isCap = player && captain === player.id;
 
@@ -63,7 +63,7 @@ function PlayerSlot({
             <div className="text-[9px] text-neon font-semibold">{player.price}M€</div>
           </div>
         ) : (
-          <div className="text-[10px] text-white/50">{POSITION_LABEL[position]} {index + 1}</div>
+          <div className="text-[10px] text-white/50">{POSITION_LABEL[position]}</div>
         )}
       </button>
     </PlayerPicker>
