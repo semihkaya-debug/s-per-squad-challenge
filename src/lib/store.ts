@@ -13,8 +13,9 @@ type State = {
   // --- JOKER SİSTEMİ ---
   weeklyJoker: JokerId | null;            // bu hafta seçilen haftalık joker (1 tane)
   weeklyJokerUnlocked: boolean;           // reklam izlendi mi? haftalık joker hakkı açıldı mı
-  seasonalJoker: JokerId | null;          // bu hafta aktif edilen sezonluk joker (varsa)
+  seasonalJoker: JokerId | null;          // bu hafta SEÇİLEN sezonluk joker (geçici — onaylanınca kalıcılaşır)
   seasonalUsed: Partial<Record<JokerId, number>>; // her sezonluk joker bu yarıda kaç kez kullanıldı
+  seasonalChargedThisWeek: boolean;       // bu hafta sezonluk hak yakıldı mı (çift yakmayı önler)
   seasonHalf: 1 | 2;                      // sezon yarısı — şimdilik elle sabit (bkz. NOT)
 
   bonusBudget: number;             // M€ added via ads, max MAX_AD_BUDGET
@@ -35,6 +36,7 @@ const initial: State = {
   weeklyJokerUnlocked: false,
   seasonalJoker: null,
   seasonalUsed: {},
+  seasonalChargedThisWeek: false,
   seasonHalf: 1,
 
   bonusBudget: 0,
@@ -119,17 +121,20 @@ export const actions = {
     return true;
   },
 
-  // Sezonluk joker aktif et — yarı başına hak kontrolü yapar
+  // Sezonluk joker SEÇ — hak YAKMAZ, sadece bu haftaki seçimi işaretler.
+  // Aynı jokere tekrar tıklamak seçimi iptal eder (toggle). Hak ancak confirm()'de yanar.
+  // Bu hafta en fazla 1 sezonluk joker seçili olabilir (yenisi eskisinin yerine geçer).
   useSeasonalJoker(j: JokerId) {
     const def = JOKERS.find((x) => x.id === j);
     if (!def || def.type !== "seasonal") return false;
+    // Bu yarıda hakkı bitmişse seçtirme (zaten kullanılmış)
     const usedThisHalf = state.seasonalUsed[j] ?? 0;
-    if (usedThisHalf >= SEASONAL_USES_PER_HALF) return false; // bu yarıda hak bitti
-    setState({
-      seasonalJoker: j,
-      seasonalUsed: { ...state.seasonalUsed, [j]: usedThisHalf + 1 },
-      confirmed: false,
-    });
+    if (usedThisHalf >= SEASONAL_USES_PER_HALF) return false;
+    // Eğer bu hafta hak zaten yakıldıysa (onaylanmış), değiştirmeye izin verme
+    if (state.seasonalChargedThisWeek) return false;
+    // Toggle: aynısına tekrar tıklandıysa iptal et, değilse seç
+    const next = state.seasonalJoker === j ? null : j;
+    setState({ seasonalJoker: next, confirmed: false });
     return true;
   },
 
@@ -138,8 +143,20 @@ export const actions = {
     setState({ bonusBudget: state.bonusBudget + 1 });
     return true;
   },
+  // Onay — sezonluk joker seçiliyse hakkı BURADA yakılır (seçim anında değil).
+  // seasonalChargedThisWeek çift yakmayı önler (tekrar onaylarsan ikinci kez yanmaz).
   confirm() {
-    setState({ confirmed: true });
+    const j = state.seasonalJoker;
+    if (j && !state.seasonalChargedThisWeek) {
+      const usedThisHalf = state.seasonalUsed[j] ?? 0;
+      setState({
+        seasonalUsed: { ...state.seasonalUsed, [j]: usedThisHalf + 1 },
+        seasonalChargedThisWeek: true,
+        confirmed: true,
+      });
+    } else {
+      setState({ confirmed: true });
+    }
   },
   // Haftalık reset — yeni haftaya geçişte haftalık şeyleri sıfırlar.
   // DİKKAT: seasonalUsed'a DOKUNMAZ (sezonluk haklar yarı boyunca korunur).
@@ -150,6 +167,7 @@ export const actions = {
       weeklyJoker: null,
       weeklyJokerUnlocked: false,
       seasonalJoker: null,
+      seasonalChargedThisWeek: false,
       bonusBudget: 0,
       confirmed: false,
     });
