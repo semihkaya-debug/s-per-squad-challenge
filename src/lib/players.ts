@@ -55,11 +55,36 @@ export const FORMATIONS = {
 
 export type FormationKey = keyof typeof FORMATIONS;
 
+// Joker türleri:
+// - "weekly"   → her hafta SADECE 1 tane kullanılabilir, kullanmak için reklam izlemek şart.
+// - "seasonal" → sezonda toplam 2 hak (ilk yarı 1 + ikinci yarı 1). Reklamla çoğaltılmaz, herkeste eşit.
+export type JokerType = "weekly" | "seasonal";
+
+export type Joker = {
+  id: string;
+  name: string;
+  desc: string;
+  emoji: string;
+  type: JokerType;
+};
+
 export const JOKERS = [
-  { id: "captain3x", name: "Kaptan 3X", desc: "Kaptanın puanını 3 ile çarp", emoji: "👑" },
-  { id: "derby", name: "Derbi Canavarı", desc: "Derbi maçlarındaki oyunculara +1.5x puan", emoji: "🔥" },
-  { id: "bus", name: "Otobüsü Çek", desc: "Defans ve Kalecilere +50% bonus puan", emoji: "🛡️" },
-  { id: "bench", name: "Yedek Kulübesi", desc: "Yedek oyuncuların puanları da sayılır", emoji: "🪑" },
-] as const;
+  // --- HAFTALIK (reklam izleyerek, her hafta 1 tane) ---
+  { id: "bus", name: "Otobüsü Çek", desc: "Bu hafta defans ve kalecilerin puanı +%50", emoji: "🛡️", type: "weekly" },
+  { id: "anatolia", name: "Anadolu Aslanı", desc: "Bu hafta dört büyükler dışındaki takımların oyuncularının puanı +%50", emoji: "🦁", type: "weekly" },
+  { id: "fanfire", name: "Taraftar Ateşi", desc: "Tek takımdan en az 4 oyuncun varsa, o takımın oyuncuları bonus puan alır", emoji: "🔵", type: "weekly" },
+
+  // --- SEZONLUK (sezonda 2 hak: ilk yarı 1 + ikinci yarı 1) ---
+  { id: "captain3x", name: "Kaptan 3X", desc: "Kaptanın puanını 3 ile çarp", emoji: "👑", type: "seasonal" },
+  { id: "bench", name: "Yedek Kulübesi", desc: "Yedek oyuncuların puanları da sayılır", emoji: "🪑", type: "seasonal" },
+  { id: "derby", name: "Derbi Canavarı", desc: "Derbi haftasında derbide oynayan oyuncularının puanı 2 ile çarpılır", emoji: "🔥", type: "seasonal" },
+] as const satisfies readonly Joker[];
 
 export type JokerId = (typeof JOKERS)[number]["id"];
+
+// Yardımcılar — store ve UI bunları kullanır
+export const WEEKLY_JOKERS = JOKERS.filter((j) => j.type === "weekly");
+export const SEASONAL_JOKERS = JOKERS.filter((j) => j.type === "seasonal");
+
+export const SEASONAL_USES_PER_HALF = 1; // her sezonluk joker, her yarıda 1 kez
+export const MAX_AD_BUDGET = 5;          // reklamla eklenebilecek max bütçe (M€)
