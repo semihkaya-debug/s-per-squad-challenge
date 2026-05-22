@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, CheckCircle2, Clapperboard, Loader2 } from "lucide-react";
-import { FORMATIONS, JOKERS, PLAYERS, type FormationKey, type Player, type Position } from "@/lib/players";
+import { FORMATIONS, WEEKLY_JOKERS, SEASONAL_JOKERS, SEASONAL_USES_PER_HALF, PLAYERS, type FormationKey, type Player, type Position } from "@/lib/players";
 import { actions, useStore } from "@/lib/store";
 import { Pitch } from "@/components/Pitch";
 import { BottomNav } from "@/components/BottomNav";
@@ -29,7 +29,10 @@ function SquadPage() {
   const user = useStore((s) => s.user);
   const squad = useStore((s) => s.squad);
   const formation = useStore((s) => s.formation);
-  const joker = useStore((s) => s.joker);
+  const weeklyJoker = useStore((s) => s.weeklyJoker);
+  const weeklyJokerUnlocked = useStore((s) => s.weeklyJokerUnlocked);
+  const seasonalJoker = useStore((s) => s.seasonalJoker);
+  const seasonalUsed = useStore((s) => s.seasonalUsed);
   const bonus = useStore((s) => s.bonusBudget);
   const confirmed = useStore((s) => s.confirmed);
   const captain = useStore((s) => s.captain);
@@ -78,7 +81,7 @@ function SquadPage() {
   const totalNeeded = 11;
   const complete = picked.length === 11 && !tooManyByPos;
 
-  const canConfirm = complete && !overBudget && joker && captain;
+  const canConfirm = complete && !overBudget && weeklyJoker && captain;
 
   const watchAd = () => {
     if (bonus >= 5 || watching) return;
@@ -171,28 +174,80 @@ function SquadPage() {
           <div className="text-xs font-mono text-accent">+1M€</div>
         </button>
 
-        {/* Jokers */}
+        {/* Haftalık Joker — reklam izleyerek açılır, 1 zorunlu */}
         <section>
           <h2 className="text-sm font-semibold mb-2 flex items-center justify-between">
             <span>Haftalık Joker <span className="text-muted-foreground font-normal">(1 zorunlu)</span></span>
-            {joker && <span className="text-[10px] text-neon">SEÇİLDİ</span>}
+            {weeklyJoker && <span className="text-[10px] text-neon">SEÇİLDİ</span>}
           </h2>
+
+          {!weeklyJokerUnlocked && (
+            <button
+              onClick={() => {
+                if (watching) return;
+                setWatching(true);
+                setTimeout(() => {
+                  actions.unlockWeeklyJoker();
+                  setWatching(false);
+                }, 1600);
+              }}
+              disabled={watching}
+              className="w-full mb-2 rounded-xl border border-accent/40 bg-accent/10 p-3 flex items-center gap-3 active:scale-[0.99] transition disabled:opacity-50"
+            >
+              <div className="size-9 rounded-lg bg-accent text-accent-foreground grid place-items-center">
+                {watching ? <Loader2 className="size-4 animate-spin" /> : <Clapperboard className="size-4" />}
+              </div>
+              <div className="flex-1 text-left text-sm font-semibold">
+                {watching ? "Reklam oynatılıyor..." : "Haftalık joker için reklam izle"}
+              </div>
+            </button>
+          )}
+
           <div className="grid grid-cols-2 gap-2">
-            {JOKERS.map((j) => {
-              const active = joker === j.id;
+            {WEEKLY_JOKERS.map((j) => {
+              const active = weeklyJoker === j.id;
+              const locked = !weeklyJokerUnlocked;
               return (
                 <button
                   key={j.id}
-                  onClick={() => actions.setJoker(j.id)}
+                  disabled={locked}
+                  onClick={() => actions.setWeeklyJoker(j.id)}
                   className={`text-left p-3 rounded-xl border transition ${
-                    active
-                      ? "border-neon bg-neon/10 glow-neon"
-                      : "border-border bg-card hover:border-neon/40"
-                  }`}
+                    active ? "border-neon bg-neon/10 glow-neon" : "border-border bg-card hover:border-neon/40"
+                  } ${locked ? "opacity-40 cursor-not-allowed" : ""}`}
                 >
                   <div className="text-xl mb-1">{j.emoji}</div>
                   <div className={`text-sm font-semibold ${active ? "text-neon" : ""}`}>{j.name}</div>
                   <div className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{j.desc}</div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Sezonluk Joker — her yarıda 1 hak, opsiyonel */}
+        <section>
+          <h2 className="text-sm font-semibold mb-2">
+            Sezonluk Joker <span className="text-muted-foreground font-normal">(opsiyonel · yarı başına 1 hak)</span>
+          </h2>
+          <div className="grid grid-cols-2 gap-2">
+            {SEASONAL_JOKERS.map((j) => {
+              const active = seasonalJoker === j.id;
+              const used = seasonalUsed[j.id] ?? 0;
+              const depleted = used >= SEASONAL_USES_PER_HALF && !active;
+              return (
+                <button
+                  key={j.id}
+                  disabled={depleted}
+                  onClick={() => actions.useSeasonalJoker(j.id)}
+                  className={`text-left p-3 rounded-xl border transition ${
+                    active ? "border-neon bg-neon/10 glow-neon" : "border-border bg-card hover:border-neon/40"
+                  } ${depleted ? "opacity-40 cursor-not-allowed" : ""}`}
+                >
+                  <div className="text-xl mb-1">{j.emoji}</div>
+                  <div className={`text-sm font-semibold ${active ? "text-neon" : ""}`}>{j.name}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{j.desc}</div>
+                  {depleted && <div className="text-[10px] text-destructive mt-1">Bu yarıda hak bitti</div>}
                 </button>
               );
             })}
@@ -215,7 +270,7 @@ function SquadPage() {
           {confirmed ? "✓ Kadro Onaylandı" :
             overBudget ? "Bütçe Aşıldı — Onaylayamazsın" :
             !complete ? `Kadronu Tamamla (${picked.length}/11)` :
-            !joker ? "Joker Seç" :
+            !weeklyJoker ? "Haftalık Joker Seç" :
             !captain ? "Kaptan Seç" :
             "Kadroyu Onayla"}
         </Button>
